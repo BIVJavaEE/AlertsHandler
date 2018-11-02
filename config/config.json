@@ -1,0 +1,8 @@
+{
+  "database" : {
+    "name": "database",
+    "url" : "jdbc:mysql://ouaz.me:3306/JEE",
+    "user": "root",
+    "password": ""
+  }
+}
