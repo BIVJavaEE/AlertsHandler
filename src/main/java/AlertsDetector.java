@@ -75,8 +75,12 @@ public class AlertsDetector {
     }
 
     private List<Alert> getAllAlerts() {
+        String query = "SELECT a FROM Alert a " +
+                "LEFT JOIN AlertTriggered at ON at.alert = a " +
+                "WHERE at IS NULL AND :timestamp BETWEEN a.beginDate AND a.endDate";
+
         return _em
-                .createQuery("SELECT a FROM Alert a WHERE :timestamp BETWEEN a.beginDate AND a.endDate", Alert.class)
+                .createQuery(query, Alert.class)
                 .setParameter("timestamp", new Timestamp(System.currentTimeMillis()), TemporalType.TIMESTAMP)
                 .getResultList();
     }
