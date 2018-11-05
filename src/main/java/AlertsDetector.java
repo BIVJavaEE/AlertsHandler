@@ -66,9 +66,10 @@ public class AlertsDetector {
     }
 
     private List<Measure> getNewlyUpdatedMeasures() {
+        Date date = new Date(_lastDetection.getTime() - 3600 * 1000);
         List<Measure> result = _em
                 .createQuery("SELECT m FROM Measure m WHERE m.timestamp > :timestamp", Measure.class)
-                .setParameter("timestamp", _lastDetection, TemporalType.TIMESTAMP)
+                .setParameter("timestamp", date, TemporalType.TIMESTAMP)
                 .getResultList();
         _lastDetection = new Date();
         writeLatestMeasureDate();

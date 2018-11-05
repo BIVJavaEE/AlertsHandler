@@ -18,7 +18,7 @@ public class Main {
         AlertsDetector alertsDetector = new AlertsDetector(databaseConfig);
         AlertsDetectorRunner alertsDetectorRunner = new AlertsDetectorRunner(alertsDetector);
         ScheduledExecutorService executorService = Executors.newScheduledThreadPool(1);
-        executorService.scheduleAtFixedRate(alertsDetectorRunner, 0, 10, TimeUnit.SECONDS);
+        executorService.scheduleAtFixedRate(alertsDetectorRunner, 0, 60, TimeUnit.SECONDS);
     }
 
 
