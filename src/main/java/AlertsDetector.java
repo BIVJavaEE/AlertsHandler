@@ -45,14 +45,13 @@ public class AlertsDetector {
     }
 
     private void readLatestMeasureDate() {
-        Date defaultValue = new Date(Long.MIN_VALUE);
         if (!new File(DatePersistenceFilePath).canRead()) {
-            _lastDetection = defaultValue;
+            _lastDetection = null;
         }
         try (DataInputStream dis = new DataInputStream(new FileInputStream(DatePersistenceFilePath))) {
             _lastDetection = new Date(dis.readLong());
         } catch (IOException ignored) {
-            _lastDetection = defaultValue;
+            _lastDetection = null;
         }
     }
 
@@ -66,10 +65,9 @@ public class AlertsDetector {
     }
 
     private List<Measure> getNewlyUpdatedMeasures() {
-        Date date = new Date(_lastDetection.getTime() - 3600 * 1000);
         List<Measure> result = _em
-                .createQuery("SELECT m FROM Measure m WHERE m.timestamp > :timestamp", Measure.class)
-                .setParameter("timestamp", date, TemporalType.TIMESTAMP)
+                .createQuery("SELECT m FROM Measure m WHERE :timestamp IS NULL OR m.timestamp > :timestamp", Measure.class)
+                .setParameter("timestamp", _lastDetection, TemporalType.TIMESTAMP)
                 .getResultList();
         _lastDetection = new Date();
         writeLatestMeasureDate();
