@@ -21,18 +21,10 @@ public class AlertsDetector {
     }
 
     public void detectAlerts() {
-        Set<Alert> triggeredAlerts = getTriggeredAlerts();
+        Set<AlertTriggered> triggeredAlerts = getTriggeredAlerts();
 
         _em.getTransaction().begin();
-
-        for (Alert alert : triggeredAlerts) {
-            AlertTriggered alertTriggered = new AlertTriggered();
-            alertTriggered.setAlert(alert);
-            alertTriggered.setTriggerDate(new Timestamp(System.currentTimeMillis()));
-            alertTriggered.setSeen(false);
-            _em.persist(alertTriggered);
-        }
-
+        triggeredAlerts.forEach((at) -> _em.persist(at));
         _em.getTransaction().commit();
     }
 
@@ -76,8 +68,8 @@ public class AlertsDetector {
 
     private List<Alert> getAllAlerts() {
         String query = "SELECT a FROM Alert a " +
-                "LEFT JOIN AlertTriggered at ON at.alert = a " +
-                "WHERE at IS NULL AND :timestamp BETWEEN a.beginDate AND a.endDate";
+                "WHERE NOT EXISTS (FROM AlertTriggered at WHERE at.alert = a) " +
+                "AND (:timestamp IS NULL OR :timestamp BETWEEN a.beginDate AND a.endDate)";
 
         return _em
                 .createQuery(query, Alert.class)
@@ -91,8 +83,10 @@ public class AlertsDetector {
         return actualValue > maxValue;
     }
 
-    private Set<Alert> getTriggeredAlerts() {
-        System.out.println("Getting alerts...");
+    private Set<AlertTriggered> getTriggeredAlerts() {
+        System.out.println("Getting valid alerts...");
+        System.out.println(new AlertTriggered());
+
         List<Alert> alerts = getAllAlerts();
         System.out.println("Found " + alerts.size() + " alerts");
 
@@ -101,13 +95,18 @@ public class AlertsDetector {
         System.out.println("Found " + measures.size() + " new measures");
 
         System.out.println("Testing alerts..");
-        Set<Alert> triggeredAlerts = new HashSet<>();
+        Set<AlertTriggered> triggeredAlerts = new HashSet<>();
         for (Alert alert : alerts) {
             for (Measure measure : measures) {
                 if (alert.getSensor() != measure.getSensor()) continue;
                 boolean triggered = testAlert(alert, measure); // **TRIGGERED**
                 if (triggered) {
-                    triggeredAlerts.add(alert);
+                    AlertTriggered alertTriggered = new AlertTriggered();
+                    alertTriggered.setAlert(alert);
+                    alertTriggered.setMeasure(measure);
+                    alertTriggered.setSeen(false);
+                    triggeredAlerts.add(alertTriggered);
+                    break;
                 }
             }
         }
